@@ -495,7 +495,7 @@ def register_tools():
         annotations=ToolAnnotations(
             title="Add Footnote After Text",
             readOnlyHint=False,
-            destructiveHint=False,
+            destructiveHint=True,
         ),
     )
     def add_footnote_after_text(filename: str, search_text: str, footnote_text: str,
@@ -508,7 +508,7 @@ def register_tools():
         annotations=ToolAnnotations(
             title="Add Footnote Before Text",
             readOnlyHint=False,
-            destructiveHint=False,
+            destructiveHint=True,
         ),
     )
     def add_footnote_before_text(filename: str, search_text: str, footnote_text: str,
@@ -521,7 +521,7 @@ def register_tools():
         annotations=ToolAnnotations(
             title="Add Footnote Enhanced",
             readOnlyHint=False,
-            destructiveHint=False,
+            destructiveHint=True,
         ),
     )
     def add_footnote_enhanced(filename: str, paragraph_index: int, footnote_text: str,
@@ -806,7 +806,7 @@ def register_tools():
         annotations=ToolAnnotations(
             title="Format Cell Text",
             readOnlyHint=False,
-            destructiveHint=False,
+            destructiveHint=True,
         ),
     )
     def format_table_cell_text(filename: str, table_index: int, row_index: int, col_index: int,
@@ -902,7 +902,8 @@ def register_tools():
     @mcp.tool(
         annotations=ToolAnnotations(
             title="Word Screen Capture",
-            readOnlyHint=True,
+            readOnlyHint=False,
+            destructiveHint=True,
         ),
     )
     def word_screen_capture(filename: str = None, output_path: str = None):
@@ -932,7 +933,8 @@ def register_tools():
     @mcp.tool(
         annotations=ToolAnnotations(
             title="Word Live Format Text",
-            destructiveHint=True,
+            readOnlyHint=False,
+            destructiveHint=False,
         ),
         description=live_tools.word_live_format_text.__doc__,
     )
@@ -989,7 +991,8 @@ def register_tools():
     @mcp.tool(
         annotations=ToolAnnotations(
             title="Word Live Insert Paragraphs",
-            destructiveHint=True,
+            readOnlyHint=False,
+            destructiveHint=False,
         ),
         description=live_tools.word_live_insert_paragraphs.__doc__,
     )
@@ -1034,7 +1037,8 @@ def register_tools():
     @mcp.tool(
         annotations=ToolAnnotations(
             title="Word Live Format Table",
-            destructiveHint=True,
+            readOnlyHint=False,
+            destructiveHint=False,
         ),
         description=live_tools.word_live_format_table.__doc__,
     )
@@ -1186,7 +1190,8 @@ def register_tools():
     @mcp.tool(
         annotations=ToolAnnotations(
             title="Word Live Take Snapshot",
-            readOnlyHint=True,
+            readOnlyHint=False,
+            destructiveHint=True,
         ),
     )
     def word_live_take_snapshot(filename: str = None):
@@ -1196,7 +1201,8 @@ def register_tools():
     @mcp.tool(
         annotations=ToolAnnotations(
             title="Word Live Get Diff",
-            readOnlyHint=True,
+            readOnlyHint=False,
+            destructiveHint=True,
         ),
     )
     def word_live_get_diff(filename: str = None):
@@ -1318,7 +1324,8 @@ def register_tools():
     @mcp.tool(
         annotations=ToolAnnotations(
             title="Word Live Add Comment",
-            destructiveHint=True,
+            readOnlyHint=False,
+            destructiveHint=False,
         ),
     )
     def word_live_add_comment(
@@ -1338,7 +1345,8 @@ def register_tools():
     @mcp.tool(
         annotations=ToolAnnotations(
             title="Word Live Reply to Comment",
-            destructiveHint=True,
+            readOnlyHint=False,
+            destructiveHint=False,
         ),
     )
     def word_live_reply_to_comment(
@@ -1357,7 +1365,9 @@ def register_tools():
     @mcp.tool(
         annotations=ToolAnnotations(
             title="Word Live Resolve Comment",
-            destructiveHint=True,
+            readOnlyHint=False,
+            destructiveHint=False,
+            idempotentHint=True,
         ),
     )
     def word_live_resolve_comment(
@@ -1491,7 +1501,8 @@ def register_tools():
     @mcp.tool(
         annotations=ToolAnnotations(
             title="Word Live Toggle Track Changes",
-            destructiveHint=True,
+            readOnlyHint=False,
+            destructiveHint=False,
         ),
     )
     def word_live_toggle_track_changes(
@@ -1505,7 +1516,8 @@ def register_tools():
     @mcp.tool(
         annotations=ToolAnnotations(
             title="Word Live Insert Image",
-            destructiveHint=True,
+            readOnlyHint=False,
+            destructiveHint=False,
         ),
         description=live_tools.word_live_insert_image.__doc__,
     )
@@ -1535,7 +1547,8 @@ def register_tools():
     @mcp.tool(
         annotations=ToolAnnotations(
             title="Word Live Insert Cross Reference",
-            destructiveHint=True,
+            readOnlyHint=False,
+            destructiveHint=False,
         ),
     )
     def word_live_insert_cross_reference(
@@ -1576,7 +1589,8 @@ def register_tools():
     @mcp.tool(
         annotations=ToolAnnotations(
             title="Word Live Insert Equation",
-            destructiveHint=True,
+            readOnlyHint=False,
+            destructiveHint=False,
         ),
     )
     def word_live_insert_equation(
@@ -1611,7 +1625,8 @@ def register_tools():
     @mcp.tool(
         annotations=ToolAnnotations(
             title="Word Live Set Page Layout",
-            destructiveHint=True,
+            readOnlyHint=False,
+            destructiveHint=False,
         ),
     )
     def word_live_set_page_layout(
@@ -1692,7 +1707,8 @@ def register_tools():
     @mcp.tool(
         annotations=ToolAnnotations(
             title="Word Live Set Paragraph Spacing",
-            destructiveHint=True,
+            readOnlyHint=False,
+            destructiveHint=False,
         ),
     )
     def word_live_set_paragraph_spacing(
@@ -1735,7 +1751,8 @@ def register_tools():
     @mcp.tool(
         annotations=ToolAnnotations(
             title="Word Live Add Watermark",
-            destructiveHint=True,
+            readOnlyHint=False,
+            destructiveHint=False,
         ),
     )
     def word_live_add_watermark(
@@ -1756,7 +1773,8 @@ def register_tools():
     @mcp.tool(
         annotations=ToolAnnotations(
             title="Set Page Layout",
-            destructiveHint=True,
+            readOnlyHint=False,
+            destructiveHint=False,
         ),
     )
     def set_page_layout(
@@ -1822,7 +1840,8 @@ def register_tools():
     @mcp.tool(
         annotations=ToolAnnotations(
             title="Add Section Break",
-            destructiveHint=True,
+            readOnlyHint=False,
+            destructiveHint=False,
         ),
     )
     def add_section_break(filename: str, break_type: str = "new_page"):
@@ -1832,7 +1851,8 @@ def register_tools():
     @mcp.tool(
         annotations=ToolAnnotations(
             title="Set Paragraph Spacing",
-            destructiveHint=True,
+            readOnlyHint=False,
+            destructiveHint=False,
         ),
     )
     def set_paragraph_spacing(
@@ -1865,6 +1885,7 @@ def register_tools():
     @mcp.tool(
         annotations=ToolAnnotations(
             title="Add Watermark",
+            readOnlyHint=False,
             destructiveHint=True,
         ),
     )
@@ -1886,7 +1907,8 @@ def register_tools():
     @mcp.tool(
         annotations=ToolAnnotations(
             title="Add Table of Contents",
-            destructiveHint=True,
+            readOnlyHint=False,
+            destructiveHint=False,
         ),
     )
     def add_table_of_contents(filename: str, title: str = "Table of Contents", max_level: int = 3):

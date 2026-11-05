@@ -1,6 +1,25 @@
 # Tool Reference
 
-Complete list of all 115 tools provided by word-mcp-live.
+Reference for the tools provided by word-mcp-live.
+
+## Tool annotations
+
+MCP hints are advisory, not access controls. `readOnlyHint` identifies tools
+that do not change documents, files, or the server's snapshot state.
+`destructiveHint` identifies tools that may remove or replace existing content,
+overwrite a separate output file, or replace a snapshot baseline. A tool is
+classified for its most destructive supported option, not just its default.
+`idempotentHint` is set only when repeating every supported call has no further
+effect. Clients and policy gateways may apply additional approval rules.
+
+For this server, formatting and layout changes are treated as non-destructive
+even though they replace formatting values; this is broader than MCP's strictly
+additive wording. Offline edits still write the document file, and undo is not
+guaranteed. Examples of operations kept destructive include cursor insertion
+that can replace selected text, page numbering that can clear a header or
+footer, and tools with an output path that can overwrite another file. Snapshot
+and diff tools change the in-memory baseline, even though they do not edit the
+document. A non-destructive hint is not a guarantee of reversibility.
 
 ---
 
