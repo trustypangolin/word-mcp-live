@@ -2,6 +2,10 @@
 
 Reference for the tools provided by word-mcp-live.
 
+Use `WORD_MCP_TOOLSETS` to select a union of tool groups at server startup;
+see [Limit tool discovery](README.md#limit-tool-discovery) for configuration.
+Descriptions are concise; parameter details are in the tool input schemas.
+
 ## Tool annotations
 
 MCP hints are advisory, not access controls. `readOnlyHint` identifies tools

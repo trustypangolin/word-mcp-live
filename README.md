@@ -6,7 +6,7 @@
 
 **The only MCP server that edits Word documents while they're open**
 
-`Live editing` &middot; `Tracked changes` &middot; `Per-action undo` &middot; `124 tools` &middot; `Cross-platform`
+`Live editing` &middot; `Tracked changes` &middot; `Per-action undo` &middot; `120 tools` &middot; `Cross-platform`
 
 [![PyPI](https://img.shields.io/pypi/v/word-mcp-live?color=blue)](https://pypi.org/project/word-mcp-live/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/downloads/)
@@ -56,7 +56,7 @@ https://github.com/user-attachments/assets/fbb09af4-1e25-4e49-94d0-45b363278810
 - **Threaded comments** — Add, reply, resolve, and delete comments like a human reviewer.
 - **Layout diagnostics** — Detects formatting problems before they become print disasters.
 - **Equations & cross-references** — Insert math formulas and auto-updating references.
-- **124 tools** — The most comprehensive Word MCP server available.
+- **120 tools** — Live and file-based Word operations.
 
 ## Quick Start
 
@@ -73,6 +73,22 @@ pip install -e .
 ```
 
 ## Client Installation
+
+### Limit tool discovery
+
+Set `WORD_MCP_TOOLSETS` in the MCP server's environment to a comma-separated
+list of groups. For example, `live` exposes only tools for documents open in
+Word; `live,comments` exposes all live tools **and** file-based comment tools.
+Groups are combined as a union, not an intersection. Available groups are
+`live`, `file`, `comments`, `tables`, `footnotes`, `tracked_changes`,
+`protection`, and `layout`. A tool can belong to more than one group. Unset,
+empty, or `all` exposes the complete existing tool list. Unknown group names
+cause startup to fail. Restart the server after changing this setting.
+
+Filtering limits discovery and available tools; it is not an authorization
+mechanism. Live tools require Word, and individual capabilities vary between
+Windows and macOS. File tools require the document to be closed in Word.
+Existing names remain available by default for client compatibility.
 
 <details open>
 <summary><b>Claude Desktop</b></summary>

@@ -16,6 +16,7 @@ load_dotenv()
 os.environ.setdefault('FASTMCP_LOG_LEVEL', 'INFO')
 from fastmcp import FastMCP
 from mcp.types import ToolAnnotations
+from word_document_server.toolsets import ToolRegistrar, parse_toolsets
 from word_document_server.tools import (
     document_tools,
     content_tools,
@@ -94,11 +95,19 @@ def setup_logging(debug_mode):
 
 
 # Initialize FastMCP server
-mcp = FastMCP("Word Document Server")
+mcp = FastMCP("Word Document Server", instructions=(
+    "Live tools operate on documents open in Microsoft Word; availability varies "
+    "by platform. File tools operate on closed .docx files."
+))
 
 
-def register_tools():
+def register_tools(server=None, toolsets=None):
     """Register all tools with the MCP server using FastMCP decorators."""
+    if server is None:
+        server = globals()["mcp"]
+    if toolsets is None:
+        toolsets = parse_toolsets(os.getenv("WORD_MCP_TOOLSETS"))
+    mcp = ToolRegistrar(server, toolsets)
     
     # Document tools (create, copy, info, etc.)
     @mcp.tool(
@@ -665,7 +674,7 @@ def register_tools():
         ),
     )
     def replace_paragraph_block_below_header(filename: str, header_text: str, new_paragraphs: list[str], detect_block_end_fn: str = None):
-        """Reemplaza el bloque de párrafos debajo de un encabezado, evitando modificar TOC."""
+        """Replace paragraphs below a heading without modifying the table of contents."""
         return replace_paragraph_block_below_header_tool(filename, header_text, new_paragraphs, detect_block_end_fn)
 
     @mcp.tool(
@@ -1897,7 +1906,7 @@ def register_tools():
         rotation: int = -45,
         section_index: int = 0,
     ):
-        """Add a diagonal text watermark (e.g. TASLAK, GİZLİ, DRAFT) to a document."""
+        """Add a diagonal text watermark (e.g. DRAFT) to a document."""
         return layout_tools.add_watermark(
             filename, text, font_size, font_color, rotation, section_index,
         )
