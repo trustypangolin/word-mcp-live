@@ -8,7 +8,7 @@ import pytest
 from fastmcp import Client, FastMCP
 
 from word_document_server.main import register_tools
-from word_document_server.toolsets import TOOLSETS, parse_toolsets, tool_groups
+from word_document_server.toolsets import LEGACY_TOOLS, TOOLSETS, parse_legacy_tools, parse_toolsets, tool_groups
 
 
 def tools_for(selection=None):
@@ -48,8 +48,8 @@ def test_invalid_toolsets_fail(value):
 
 
 @pytest.mark.parametrize("group,budget", [
-    ("live", 40000), ("file", 38000), ("comments", 4000), ("tables", 14000),
-    ("footnotes", 5000), ("tracked_changes", 5000), ("protection", 2000),
+    ("live", 40000), ("file", 39500), ("comments", 4000), ("tables", 14000),
+    ("footnotes", 7000), ("tracked_changes", 5000), ("protection", 2000),
     ("layout", 10000),
 ])
 def test_toolsets_have_expected_membership_and_payload_budget(all_tools, group, budget):
@@ -110,3 +110,45 @@ def test_selection_is_read_from_environment(monkeypatch):
     monkeypatch.setenv("WORD_MCP_TOOLSETS", "invalid")
     with pytest.raises(ValueError, match="WORD_MCP_TOOLSETS"):
         tools_for()
+
+
+def test_legacy_tools_are_opt_in_to_hide(monkeypatch):
+    monkeypatch.delenv("WORD_MCP_TOOLSETS", raising=False)
+    monkeypatch.delenv("WORD_MCP_LEGACY_TOOLS", raising=False)
+    compatible = {t.name for t in tools_for()}
+    assert LEGACY_TOOLS <= compatible
+    monkeypatch.setenv("WORD_MCP_LEGACY_TOOLS", "false")
+    compact = {t.name for t in tools_for()}
+    assert compatible - compact == LEGACY_TOOLS
+    assert {"add_footnote", "delete_footnote", "merge_table_cells"} <= compact
+    with pytest.raises(ValueError, match="WORD_MCP_LEGACY_TOOLS"):
+        parse_legacy_tools("disabled")
+
+
+def test_canonical_footnotes_via_mcp(tmp_path):
+    from docx import Document
+
+    path = tmp_path / "test.docx"
+    doc = Document()
+    doc.add_paragraph("Example text")
+    doc.save(path)
+    server = FastMCP("Canonical footnotes")
+    register_tools(server, frozenset({"footnotes"}), legacy_tools=False)
+
+    async def call():
+        async with Client(server) as client:
+            tools = {tool.name: tool for tool in await client.list_tools()}
+            assert tools["add_footnote"].annotations.destructiveHint is True
+            assert tools["delete_footnote"].annotations.destructiveHint is True
+            added = await client.call_tool("add_footnote", {
+                "filename": str(path), "footnote_text": "Native note", "paragraph_index": 0,
+            })
+            result = added.data if hasattr(added, "data") else json.loads(added[0].text)
+            assert result["success"], result
+            deleted = await client.call_tool("delete_footnote", {
+                "filename": str(path), "footnote_id": result["details"]["footnote_id"],
+            })
+            result = deleted.data if hasattr(deleted, "data") else json.loads(deleted[0].text)
+            assert result["success"]
+
+    asyncio.run(call())

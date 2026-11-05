@@ -9,6 +9,9 @@ This module combines both standard and robust implementations:
 - Dict-return robust functions for structured responses
 """
 import os
+import sys
+import tempfile
+from contextlib import AsyncExitStack
 from typing import Optional, Dict, Any
 from docx import Document
 from docx.shared import Pt
@@ -24,6 +27,114 @@ from word_document_server.core.footnotes import (
     validate_document_footnotes,
     add_footnote_at_paragraph_end  # Compatibility function
 )
+
+
+async def _canonical_footnote_operation(filename, output_filename, operation, **kwargs):
+    """Stage the core operation and publish only after it succeeds."""
+    filename = ensure_docx_extension(filename)
+    target = output_filename or filename
+    paths = {os.path.realpath(filename)}
+    if output_filename:
+        paths.add(os.path.realpath(output_filename))
+    if sys.platform == "win32":
+        paths = {path.casefold() for path in paths}
+    try:
+        async with AsyncExitStack() as stack:
+            for path in sorted(paths):
+                await stack.enter_async_context(get_file_lock(path))
+            if not os.path.exists(filename):
+                return _footnote_input_error(f"File not found: {filename}")
+            writeable, error = check_file_writeable(target)
+            if not writeable:
+                return _footnote_input_error(f"Cannot modify document: {error}")
+            fd, staged = tempfile.mkstemp(prefix=".word-footnote-", suffix=".docx",
+                                          dir=os.path.dirname(os.path.abspath(target)))
+            os.close(fd)
+            try:
+                success, message, details = operation(
+                    filename=filename, output_filename=staged, **kwargs
+                )
+                if success:
+                    os.replace(staged, target)
+                    message = message.replace(staged, target)
+            finally:
+                for path in (staged, staged + ".tmp"):
+                    if os.path.exists(path):
+                        os.remove(path)
+        return {"success": success, "message": message, "details": details}
+    except Exception as exc:
+        return {"success": False, "message": f"Footnote operation failed: {exc}", "details": None}
+
+
+def _footnote_input_error(message: str) -> Dict[str, Any]:
+    return {"success": False, "message": message, "details": None}
+
+
+async def add_footnote(
+    filename: str,
+    footnote_text: str,
+    search_text: Optional[str] = None,
+    paragraph_index: Optional[int] = None,
+    position: str = "after",
+    output_filename: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Add a real Word footnote using exactly one paragraph selector.
+
+    search_text selects the first matching paragraph, not an exact insertion
+    point. position="before" inserts at its beginning (before its first text
+    run); "after" inserts at its end (after its last run), not adjacent to
+    the matched text. paragraph_index is zero-based over all paragraphs in
+    document.xml, including table paragraphs, unlike Document.paragraphs.
+
+    An existing output_filename is overwritten on success. Without an output
+    path, modify the source in place. Locks are local to this server process.
+    Returns a dict with success, message, and core details.
+    """
+    if (search_text is None) == (paragraph_index is None):
+        return _footnote_input_error("Provide exactly one of search_text or paragraph_index")
+    if search_text is not None and (not isinstance(search_text, str) or not search_text):
+        return _footnote_input_error("search_text must be a non-empty string")
+    if paragraph_index is not None and (type(paragraph_index) is not int or paragraph_index < 0):
+        return _footnote_input_error("paragraph_index must be a non-negative integer")
+    if position not in ("before", "after"):
+        return _footnote_input_error("position must be 'before' or 'after'")
+    return await _canonical_footnote_operation(
+        filename, output_filename, add_footnote_robust,
+        search_text=search_text, paragraph_index=paragraph_index,
+        footnote_text=footnote_text, position=position, validate_location=True,
+    )
+
+
+async def delete_footnote(
+    filename: str,
+    footnote_id: Optional[int] = None,
+    search_text: Optional[str] = None,
+    clean_orphans: bool = False,
+    output_filename: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Delete a real Word footnote using exactly one selector.
+
+    search_text finds the first matching paragraph containing a footnote and
+    deletes its first reference. footnote_id deletes all references with that
+    positive ID. clean_orphans also removes other unreferenced footnote
+    content, except separator IDs -1 and 0.
+
+    An existing output_filename is overwritten on success. Without an output
+    path, modify the source in place. Locks are local to this server process.
+    Returns a dict with success, message, and core details.
+    """
+    if (footnote_id is None) == (search_text is None):
+        return _footnote_input_error("Provide exactly one of footnote_id or search_text")
+    if footnote_id is not None and (type(footnote_id) is not int or footnote_id <= 0):
+        return _footnote_input_error("footnote_id must be a positive integer")
+    if search_text is not None and (not isinstance(search_text, str) or not search_text):
+        return _footnote_input_error("search_text must be a non-empty string")
+    if type(clean_orphans) is not bool:
+        return _footnote_input_error("clean_orphans must be a boolean")
+    return await _canonical_footnote_operation(
+        filename, output_filename, delete_footnote_robust,
+        footnote_id=footnote_id, search_text=search_text, clean_orphans=clean_orphans,
+    )
 
 
 async def add_footnote_to_document(filename: str, paragraph_index: int, footnote_text: str) -> str:

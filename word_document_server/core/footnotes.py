@@ -543,13 +543,11 @@ def delete_footnote_robust(
         # Remove footnote reference from document
         refs_removed = 0
         for fn_ref in doc_root.xpath(f'//w:footnoteReference[@w:id="{footnote_id}"]', namespaces=nsmap):
-            # Remove the entire run containing the reference
+            # Keep other content that Word may have placed in the same run.
             run = fn_ref.getparent()
             if run is not None and run.tag == f'{{{W_NS}}}r':
-                para = run.getparent()
-                if para is not None:
-                    para.remove(run)
-                    refs_removed += 1
+                run.remove(fn_ref)
+                refs_removed += 1
         
         if refs_removed == 0:
             return False, f"Footnote {footnote_id} not found", None
