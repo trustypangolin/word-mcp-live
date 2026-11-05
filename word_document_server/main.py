@@ -6,7 +6,9 @@ Supports multiple transports: stdio, sse, and streamable-http using standalone F
 
 import os
 import sys
+from typing import Annotated
 from dotenv import load_dotenv
+from pydantic import Field
 from word_document_server.defaults import DEFAULT_AUTHOR, DEFAULT_INITIALS
 
 # Load environment variables from .env file
@@ -16,7 +18,7 @@ load_dotenv()
 os.environ.setdefault('FASTMCP_LOG_LEVEL', 'INFO')
 from fastmcp import FastMCP
 from mcp.types import ToolAnnotations
-from word_document_server.toolsets import ToolRegistrar, parse_toolsets
+from word_document_server.toolsets import ToolRegistrar, parse_legacy_tools, parse_toolsets
 from word_document_server.tools import (
     document_tools,
     content_tools,
@@ -101,13 +103,15 @@ mcp = FastMCP("Word Document Server", instructions=(
 ))
 
 
-def register_tools(server=None, toolsets=None):
+def register_tools(server=None, toolsets=None, legacy_tools=None):
     """Register all tools with the MCP server using FastMCP decorators."""
     if server is None:
         server = globals()["mcp"]
     if toolsets is None:
         toolsets = parse_toolsets(os.getenv("WORD_MCP_TOOLSETS"))
-    mcp = ToolRegistrar(server, toolsets)
+    if legacy_tools is None:
+        legacy_tools = parse_legacy_tools(os.getenv("WORD_MCP_LEGACY_TOOLS"))
+    mcp = ToolRegistrar(server, toolsets, legacy_tools)
     
     # Document tools (create, copy, info, etc.)
     @mcp.tool(
@@ -489,6 +493,37 @@ def register_tools(server=None, toolsets=None):
         return protection_tools.unprotect_document(filename, password)
     
     # Footnote tools
+    @mcp.tool(
+        annotations=ToolAnnotations(
+            title="Add Native Footnote",
+            readOnlyHint=False,
+            destructiveHint=True,
+        ),
+    )
+    def add_footnote(
+        filename: Annotated[str, Field(description="Closed .docx file to read.")],
+        footnote_text: Annotated[str, Field(description="Text of the native footnote.")],
+        search_text: Annotated[str, Field(description="First matching paragraph; provide this or paragraph_index.")] = None,
+        paragraph_index: Annotated[int, Field(description="Zero-based document.xml paragraph index, including tables; provide this or search_text.")] = None,
+        position: Annotated[str, Field(description="before or after the paragraph's runs, not the exact search match.")] = "after",
+        output_filename: Annotated[str, Field(description="Optional output path; an existing file is replaced on success.")] = None,
+    ):
+        """Add a native footnote at the start or end of a selected paragraph. Output files can be overwritten."""
+        return footnote_tools.add_footnote(filename, footnote_text, search_text, paragraph_index, position, output_filename)
+
+    @mcp.tool(
+        annotations=ToolAnnotations(title="Delete Native Footnote", destructiveHint=True),
+    )
+    def delete_footnote(
+        filename: Annotated[str, Field(description="Closed .docx file to read.")],
+        footnote_id: Annotated[int, Field(description="Native footnote ID; provide this or search_text.")] = None,
+        search_text: Annotated[str, Field(description="Find the first matching paragraph with a reference; provide this or footnote_id.")] = None,
+        clean_orphans: Annotated[bool, Field(description="Also remove other unreferenced footnotes.")] = False,
+        output_filename: Annotated[str, Field(description="Optional output path; an existing file is replaced on success.")] = None,
+    ):
+        """Delete a native footnote by ID or matching paragraph. Output files can be overwritten."""
+        return footnote_tools.delete_footnote(filename, footnote_id, search_text, clean_orphans, output_filename)
+
     @mcp.tool(
         annotations=ToolAnnotations(
             title="Add Footnote",

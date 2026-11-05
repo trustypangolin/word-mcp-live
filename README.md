@@ -6,7 +6,7 @@
 
 **The only MCP server that edits Word documents while they're open**
 
-`Live editing` &middot; `Tracked changes` &middot; `Per-action undo` &middot; `120 tools` &middot; `Cross-platform`
+`Live editing` &middot; `Tracked changes` &middot; `Per-action undo` &middot; `Cross-platform`
 
 [![PyPI](https://img.shields.io/pypi/v/word-mcp-live?color=blue)](https://pypi.org/project/word-mcp-live/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/downloads/)
@@ -56,7 +56,7 @@ https://github.com/user-attachments/assets/fbb09af4-1e25-4e49-94d0-45b363278810
 - **Threaded comments** — Add, reply, resolve, and delete comments like a human reviewer.
 - **Layout diagnostics** — Detects formatting problems before they become print disasters.
 - **Equations & cross-references** — Insert math formulas and auto-updating references.
-- **120 tools** — Live and file-based Word operations.
+- **Live and file-based tools** — Choose only the tool groups needed for a session.
 
 ## Quick Start
 
@@ -89,6 +89,12 @@ Filtering limits discovery and available tools; it is not an authorization
 mechanism. Live tools require Word, and individual capabilities vary between
 Windows and macOS. File tools require the document to be closed in Word.
 Existing names remain available by default for client compatibility.
+
+Set `WORD_MCP_LEGACY_TOOLS=false` to exclude legacy footnote tools and the
+horizontal/vertical table-merge aliases. Use `add_footnote`, `delete_footnote`
+and `merge_table_cells` instead. This is opt-in: old tools have different
+signatures and, in some cases, different behavior; see the migration notes in
+[TOOLS.md](TOOLS.md#footnote-and-merge-migration). Restart after changing it.
 
 <details open>
 <summary><b>Claude Desktop</b></summary>

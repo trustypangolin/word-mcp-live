@@ -6,6 +6,29 @@ Use `WORD_MCP_TOOLSETS` to select a union of tool groups at server startup;
 see [Limit tool discovery](README.md#limit-tool-discovery) for configuration.
 Descriptions are concise; parameter details are in the tool input schemas.
 
+## Footnote and merge migration
+
+The consolidated `add_footnote` and `delete_footnote` use native OOXML
+footnotes. `add_footnote` selects a paragraph either by `search_text` (first
+match) or by zero-based `paragraph_index` (including paragraphs inside tables).
+`position` places the reference at the **paragraph boundary**, not immediately
+next to the matched text. `delete_footnote` accepts an ID or searches for the
+first matching paragraph with a reference. It defaults to
+`clean_orphans=false`; enabling cleanup can remove other unreferenced notes.
+Each returns a structured result. An existing `output_filename` is replaced
+on success; failures leave it unchanged. Close the document in Word first.
+
+The previous footnote names remain available by default, with their original
+signatures and behavior. In particular, `add_footnote_to_document` may create
+a simulated body footnote rather than a native one, and legacy output-path
+operations can overwrite a destination even on failure. The consolidated tools
+are not drop-in replacements for those contracts. Set
+`WORD_MCP_LEGACY_TOOLS=false` to omit them and use the consolidated tools.
+
+For horizontal merges use `merge_table_cells` with the same start and end row;
+for vertical merges use the same start and end column. Coordinates are zero-based
+and inclusive. The old merge aliases are also omitted in consolidated mode.
+
 ## Tool annotations
 
 MCP hints are advisory, not access controls. `readOnlyHint` identifies tools
@@ -148,9 +171,11 @@ These work on Windows, macOS, and Linux using python-docx. The document file mus
 
 | Tool | Description |
 |------|-------------|
+| `add_footnote` | Add a native footnote at a paragraph boundary |
+| `delete_footnote` | Delete a native footnote by ID or matching paragraph |
 | `add_footnote_to_document` | Add a footnote to a paragraph |
-| `add_footnote_after_text` | Add footnote after specific text |
-| `add_footnote_before_text` | Add footnote before specific text |
+| `add_footnote_after_text` | Add footnote at the end of the matching paragraph |
+| `add_footnote_before_text` | Add footnote at the beginning of the matching paragraph |
 | `add_footnote_enhanced` | Enhanced footnote with superscript |
 | `add_footnote_robust` | Robust footnote with validation |
 | `add_endnote_to_document` | Add an endnote |

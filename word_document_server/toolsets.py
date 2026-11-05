@@ -8,6 +8,22 @@ TOOLSETS = frozenset({
     "protection", "layout",
 })
 
+# Legacy names retain their original contracts when compatibility mode is on.
+LEGACY_TOOLS = frozenset({
+    "add_footnote_to_document", "add_footnote_after_text", "add_footnote_before_text",
+    "add_footnote_enhanced", "add_footnote_robust", "delete_footnote_from_document",
+    "delete_footnote_robust", "merge_table_cells_horizontal", "merge_table_cells_vertical",
+})
+
+
+def parse_legacy_tools(value):
+    """Whether compatibility tool names should be registered."""
+    if value is None or value.strip().lower() in {"", "1", "true", "yes"}:
+        return True
+    if value.strip().lower() in {"0", "false", "no"}:
+        return False
+    raise ValueError("WORD_MCP_LEGACY_TOOLS must be true or false")
+
 
 def parse_toolsets(value):
     """Parse a comma-separated union of toolsets; None means all tools."""
@@ -56,13 +72,15 @@ def tool_groups(name):
 class ToolRegistrar:
     """Register selected tools with compact descriptions and parameter schemas."""
 
-    def __init__(self, server, selected):
+    def __init__(self, server, selected, legacy_tools=True):
         self.server = server
         self.selected = selected
+        self.legacy_tools = legacy_tools
 
     def tool(self, **kwargs):
         def register(function):
-            if self.selected is None or tool_groups(function.__name__) & self.selected:
+            if ((self.legacy_tools or function.__name__ not in LEGACY_TOOLS)
+                    and (self.selected is None or tool_groups(function.__name__) & self.selected)):
                 prepared, options = prepare_tool(function, **kwargs)
                 self.server.tool(**options)(prepared)
             return function
